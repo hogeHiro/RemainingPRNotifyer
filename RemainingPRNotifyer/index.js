@@ -43,7 +43,7 @@ async function postSlack(text) {
 }
 
 async function getPullRequestsText(prList) {
-  return prList.map(x => `${x.number}: ${x.title} by ${x.user.login}`).join(`¥n`)
+  return prList.map(x => `<${x.html_url}|${x.title}> by <${x.user.html_url}|${x.user.login}>`).join(`¥n`)
 }
 
 async function getAllPullRequests(context, owner, repo) {
