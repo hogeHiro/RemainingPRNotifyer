@@ -1,0 +1,2 @@
+# RemainingPRNotifyer
+プルリクエストの残数を通知するGitHubApps
