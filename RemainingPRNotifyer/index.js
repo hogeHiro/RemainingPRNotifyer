@@ -6,6 +6,7 @@
 const createScheduler = require('probot-scheduler')
 const { WebClient } = require('@slack/web-api');
 const slackAPI = new WebClient(process.env.SLACK_BOT_TOKEN);
+const moment = require('moment');
 
 module.exports = app => {
   // Your code here
@@ -24,9 +25,17 @@ module.exports = app => {
 
 async function notifyPullRequestToSlack(context) {
     const { owner, repo } = context.repo()
+    const endDate = moment.utc().format()
+    const startDate = moment.utc().subtract(7, 'days').format()
     const prList = await getAllPullRequests(context, owner, repo)
-    const prText = await getPullRequestsText(prList)
-    postSlack(prText)
+    const prText = await getPullRequestsText(prList, startDate, endDate)
+    let text = `${moment(startDate).format("YYYY-MM-DD")} ~ ${moment(endDate).format("YYYY-MM-DD")} にマージされたプルリクエストは`
+    if (prText.length) {
+      text += `${prText.length}件でした。\n${prText.join("\n")}`
+    } else {
+      text += "ありませんでした。"
+    }
+    postSlack(text)
 }
 
 async function postSlack(text) {
@@ -42,8 +51,14 @@ async function postSlack(text) {
   }
 }
 
-async function getPullRequestsText(prList) {
-  return prList.map(x => `<${x.html_url}|${x.title}> by <${x.user.html_url}|${x.user.login}>`).join(`¥n`)
+async function getPullRequestsText(prList, startDate, endDate) {
+  console.log(prList)
+  return prList.filter(x => {
+    console.log(moment(x.merged_at).utc().isBetween(startDate, endDate))
+    return x.state === "closed" && moment(x.merged_at).utc().isBetween(startDate, endDate)
+  }).map(x => {
+     return `<${x.html_url}|${x.title}> by <${x.user.html_url}|${x.user.login}>`
+  })
 }
 
 async function getAllPullRequests(context, owner, repo) {
@@ -51,7 +66,7 @@ async function getAllPullRequests(context, owner, repo) {
     context.github.pullRequests.getAll({
       owner,
       repo,
-      state: 'all',
+      state: 'closed',
       per_page: 100
     }),
     res => res.data
