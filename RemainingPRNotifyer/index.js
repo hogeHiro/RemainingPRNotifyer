@@ -24,25 +24,34 @@ module.exports = app => {
 }
 
 async function notifyPullRequestToSlack(context) {
-    const { owner, repo } = context.repo()
-    const endDate = moment.utc().format()
-    const startDate = moment.utc().subtract(7, 'days').format()
-    const prList = await getAllPullRequests(context, owner, repo)
-    const prText = await getPullRequestsText(prList, startDate, endDate)
-    let text = `${moment(startDate).format("YYYY-MM-DD")} ~ ${moment(endDate).format("YYYY-MM-DD")} にマージされたプルリクエストは`
-    if (prText.length) {
-      text += `${prText.length}件でした。\n${prText.join("\n")}`
-    } else {
-      text += "ありませんでした。"
-    }
-    postSlack(text)
+  // console.log(context)
+  const { owner, repo } = context.repo()
+  const endDate = moment.utc().format()
+  const startDate = moment.utc().subtract(7, 'days').format()
+  const prList = await getAllPullRequests(context, owner, repo)
+  const prText = await getPullRequestsText(prList, startDate, endDate)
+  let text = `【<${context.payload.repository.html_url}|${context.payload.repository.full_name}>】`
+  if (prText.length) {
+    text += `今週は *${prText.length}* 件のプルリクエストが完了しました (${moment(startDate).format("YYYY-MM-DD")} ~ ${moment(endDate).format("YYYY-MM-DD")})。`
+  } else {
+    text += "今週完了したプルリクエストはありませんでした。"
+  }
+  description = prText.join("\n")
+  postSlack(text, description)
 }
 
-async function postSlack(text) {
+async function postSlack(text, footer) {
   console.log(text)
   try {
     const result = await slackAPI.chat.postMessage({
-      text: `${text}`,
+      attachments: [
+        {
+          "fallback": `${text}`,
+          "color": "#2eb886",
+          "pretext": `${text}`,
+          "footer": `${footer}`
+        }
+      ],
       channel: `${process.env.SLACK_CHANNEL}`,
     });
     console.log('Message sent successfully', result.ts);
@@ -52,12 +61,10 @@ async function postSlack(text) {
 }
 
 async function getPullRequestsText(prList, startDate, endDate) {
-  console.log(prList)
   return prList.filter(x => {
-    console.log(moment(x.merged_at).utc().isBetween(startDate, endDate))
     return x.state === "closed" && moment(x.merged_at).utc().isBetween(startDate, endDate)
   }).map(x => {
-     return `<${x.html_url}|${x.title}> by <${x.user.html_url}|${x.user.login}>`
+    return `「<${x.html_url}|${x.title}>」 by <${x.user.html_url}|${x.user.login}>`
   })
 }
 
