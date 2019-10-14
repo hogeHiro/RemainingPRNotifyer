@@ -42,10 +42,10 @@ async function notifyPullRequestToSlack(context) {
     text += "今週完了したプルリクエストはありませんでした。"
   }
   description = prText.join("\n")
-  postSlack(text, description)
+  postSlack(context, text, description)
 }
 
-async function postSlack(text, footer) {
+async function postSlack(context, text, footer) {
   const config = await getConfig(context, 'WeeklyWorks.yml')
   if (!config.channel) { return }
   try {
