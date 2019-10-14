@@ -14,17 +14,21 @@ module.exports = app => {
 
   createScheduler(app, {
     delay: !!process.env.DISABLE_DELAY, // delay is enabled on first run
-    // interval: 24 * 60 * 60 * 1000 // 1 day
-    interval: 1 * 1 * 60 * 1000 // 1 min
+    interval: 24 * 60 * 60 * 1000 // 1 day
   })
 
   app.on('schedule.repository', context => {
+    if (!isNeededNotify()) { return }
     notifyPullRequestToSlack(context)
   })
 }
 
+function isNeededNotify(context) {
+  // 日曜日だけ通知する
+  return moment().utc().day() == 0
+}
+
 async function notifyPullRequestToSlack(context) {
-  // console.log(context)
   const { owner, repo } = context.repo()
   const endDate = moment.utc().format()
   const startDate = moment.utc().subtract(7, 'days').format()
@@ -70,7 +74,7 @@ async function getPullRequestsText(prList, startDate, endDate) {
 
 async function getAllPullRequests(context, owner, repo) {
   let pullRequests = await context.github.paginate(
-    context.github.pullRequests.getAll({
+    context.github.pullRequests.list({
       owner,
       repo,
       state: 'closed',
