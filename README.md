@@ -1,2 +1,2 @@
-# RemainingPRNotifyer
-プルリクエストの残数を通知するGitHubApps
+# WeeklyWorks
+今週マージされたプルリクエストのリストを Slack に通知する GitHubApps
