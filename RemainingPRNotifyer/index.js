@@ -7,6 +7,7 @@ const createScheduler = require('probot-scheduler')
 const { WebClient } = require('@slack/web-api');
 const slackAPI = new WebClient(process.env.SLACK_BOT_TOKEN);
 const moment = require('moment');
+const getConfig = require('probot-config');
 
 module.exports = app => {
   // Your code here
@@ -45,7 +46,8 @@ async function notifyPullRequestToSlack(context) {
 }
 
 async function postSlack(text, footer) {
-  console.log(text)
+  const config = await getConfig(context, 'WeeklyWorks.yml')
+  if (!config.channel) { return }
   try {
     const result = await slackAPI.chat.postMessage({
       attachments: [
@@ -56,7 +58,7 @@ async function postSlack(text, footer) {
           "footer": `${footer}`
         }
       ],
-      channel: `${process.env.SLACK_CHANNEL}`,
+      channel: `${config.channel}`,
     });
     console.log('Message sent successfully', result.ts);
   } catch (error) {
