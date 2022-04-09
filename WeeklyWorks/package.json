@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@slack/web-api": "^5.2.1",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "probot": "^7.2.0",
     "probot-config": "^1.1.0",
     "probot-scheduler": "^1.2.0"
